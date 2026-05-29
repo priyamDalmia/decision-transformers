@@ -7,7 +7,7 @@ ray.init(ignore_reinit_error=True)
 config = (
     SACConfig()
     .environment(env="Pendulum-v1")
-    .env_runners(num_env_runners=2)
+    .env_runners(num_env_runners=1)
     .training(
         train_batch_size_per_learner=256,
         gamma=0.99,

@@ -36,6 +36,18 @@ def collect_trajectories(env_name="Pendulum-v1", num_episodes=2000, seed=0):
     return trajectories
 
 
+def discounted_rtg(rewards: np.ndarray, gamma: float = 0.99) -> np.ndarray:
+    """Compute discounted Return-to-Go (RTG) for a trajectory.
+
+    R_hat_t = sum_{t'=t}^{T} gamma^{t'-t} r_{t'}. Computed in O(T) via reverse discounted cumsum."""
+    rtg = np.zeros_like(rewards, dtype=np.float32)
+    running = 0.0
+    for t in reversed(range(len(rewards))):
+        running = rewards[t] + gamma * running
+        rtg[t] = running
+    return rtg
+
+
 def compute_return_to_go(rewards: np.ndarray) -> np.ndarray:
     """Compute Return-to-Go (RTG) for a trajectory.
 
@@ -45,9 +57,14 @@ def compute_return_to_go(rewards: np.ndarray) -> np.ndarray:
 
 if __name__ == "__main__":
     trajs = collect_trajectories()
-    # Attach Return-to-Go (RTG) to each trajectory so downstream code never recomputes
+
+    # For Decision Transformers: Attach Return-to-Go (RTG) to each trajectory so downstream code never recomputes
+    # for t in trajs:
+    #     t["rtg"] = compute_return_to_go(t["reward"])
+
+    # For Trajectory Transformers: Attach discounted Return-to-Go (RTG) to each trajectory so downstream code never recomputes
     for t in trajs:
-        t["rtg"] = compute_return_to_go(t["reward"])
+        t["rtg"] = discounted_rtg(t["reward"])
 
     returns = np.array([t["reward"].sum() for t in trajs])
     print(f"Collected {len(trajs)} trajectories.")
