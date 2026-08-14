@@ -1,0 +1,13 @@
+# Data collection — see dt.config.DataCollectionConfig for the schema.
+# Values here override the dataclass defaults; unknown keys are rejected.
+
+env_name: Pendulum-v1
+num_episodes: 2000
+seed: 0
+
+# 1.0 -> undiscounted returns-to-go (Decision Transformers).
+# 0.99 -> discounted returns-to-go (Trajectory Transformers).
+gamma: 1.0
+
+# Relative to the project root.
+output_path: data/pendulum_random.pkl

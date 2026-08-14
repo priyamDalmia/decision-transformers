@@ -1,19 +1,24 @@
+import logging
+import pickle
 from pathlib import Path
+
 import gymnasium as gym
 import numpy as np
-import pickle
 import torch
-
-from ray.rllib.core.rl_module import RLModule
 from ray.rllib.core import (
-    COMPONENT_LEARNER_GROUP,
     COMPONENT_LEARNER,
+    COMPONENT_LEARNER_GROUP,
     COMPONENT_RL_MODULE,
     DEFAULT_MODULE_ID,
 )
+from ray.rllib.core.rl_module import RLModule
 
 # resuing old utility
-from data_collection import compute_returns_to_go
+from dt.dataset.data_collection import compute_returns_to_go
+from dt.paths import CHECKPOINT_DIR, DATA_DIR
+from dt.utils.logging_setup import setup_logging
+
+logger = logging.getLogger(__name__)
 
 
 def load_rl_module(checkpoint_path):
@@ -52,7 +57,7 @@ def collect_expert_trajectories(
                 out = rl_module.forward_inference({"obs": obs_tensor})
             # For SAC's default GaussianMixin, take the determinisitc Mean
             if "actions" in out:
-                action = out["actions"].sequeze(0).numpy()
+                action = out["actions"].squeeze(0).numpy()
             else:
                 # Squashed Gaussain: take tanh(mean)
                 action_dist_inputs = out["action_dist_inputs"].squeeze(0).numpy()
@@ -85,14 +90,23 @@ def collect_expert_trajectories(
 
 
 if __name__ == "__main__":
+    setup_logging()
+
     trajs = collect_expert_trajectories(
-        "./checkpoints/sac_pendulum_rllib",
+        CHECKPOINT_DIR / "sac_pendulum_rllib",
         num_episodes=1000,
         action_noise_std=0.1,  # mild noise = "medium-expert" quality
     )
     returns = np.array([t["rewards"].sum() for t in trajs])
-    print(
-        f"Expert: mean={returns.mean():.2f}, min={returns.min():.2f}, max={returns.max():.2f}"
+    logger.info(
+        "Expert: mean %.2f | min %.2f | max %.2f",
+        returns.mean(),
+        returns.min(),
+        returns.max(),
     )
-    with open("data/pendulum_expert.pkl", "wb") as f:
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = DATA_DIR / "pendulum_expert.pkl"
+    with open(out_path, "wb") as f:
         pickle.dump(trajs, f)
+    logger.info("Saved dataset -> %s", out_path)

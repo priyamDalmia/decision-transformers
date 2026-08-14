@@ -1,5 +1,16 @@
+import logging
+
 import ray
 from ray.rllib.algorithms.sac import SACConfig
+
+from dt.paths import CHECKPOINT_DIR
+from dt.utils.logging_setup import setup_logging
+
+logger = logging.getLogger(__name__)
+
+# This module is a top-to-bottom training script, so it configures logging on
+# import rather than under a __main__ guard.
+setup_logging()
 
 ray.init(ignore_reinit_error=True)
 
@@ -24,12 +35,13 @@ result = algo.train()
 for i in range(200):
     result = algo.train()
     mean_ret = result["env_runners"]["episode_return_mean"]
-    print(f"iter {i:3d} | mean_return = {mean_ret:.1f}")
+    logger.debug("iter %3d | mean_return %.1f", i, mean_ret)
     if mean_ret >= target_return:
-        print(f"Target return {target_return} reached at iter {i}!")
+        logger.info("Target return %.1f reached at iter %d", target_return, i)
         break
 
-checkpoint_path = algo.save_to_path("./checkpoints/sac_pendulum_rllib")
-print(f"Saved checkpoint to {checkpoint_path}")
+CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+checkpoint_path = algo.save_to_path(str(CHECKPOINT_DIR / "sac_pendulum_rllib"))
+logger.info("Saved checkpoint -> %s", checkpoint_path)
 algo.stop()
 ray.shutdown()

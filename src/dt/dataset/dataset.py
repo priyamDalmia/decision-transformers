@@ -9,14 +9,14 @@ class RCBCDataset(Dataset):
     Each sample is (state, rtg) -> action. No sequences yet."""
 
     def __init__(self, trajectories):
-        states = np.concatenate([t["state"] for t in trajectories], axis=0)
-        actions = np.concatenate([t["action"] for t in trajectories], axis=0)
+        states = np.concatenate([t["states"] for t in trajectories], axis=0)
+        actions = np.concatenate([t["actions"] for t in trajectories], axis=0)
         rtgs = np.concatenate([t["rtg"] for t in trajectories], axis=0)
 
         # Normalize states (fit on training data, save stats for eval-time use)
         self.state_mean = states.mean(axis=0)
         self.state_std = states.std(axis=0) + 1e-6
-        self.states = ((states - self.state_mean) / self.states_std).astype(np.float32)
+        self.states = ((states - self.state_mean) / self.state_std).astype(np.float32)
         self.actions = actions.astype(np.float32)
 
         # Scale RTG so it's not orders of magnitude larger than states.

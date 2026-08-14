@@ -1,0 +1,38 @@
+[project]
+name = "decision-transformers"
+version = "0.1.0"
+description = "Decision Transformers and RL as conditional sequence modeling."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gymnasium>=1.2",
+    "numpy>=2.4",
+    "omegaconf>=2.3",
+    "ray[rllib]>=2.55",
+    "torch>=2.11",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "pytest>=9.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dt"]
+
+[tool.ruff]
+line-length = 88
+# scripts/minimal_dt.py is an unfinished from-scratch DT walkthrough; temp/ and
+# notebooks/ are scratch space. Linting them drowns real signal.
+extend-exclude = ["scripts/minimal_dt.py", "temp", "notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

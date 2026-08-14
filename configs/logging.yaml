@@ -1,0 +1,68 @@
+# configs/logging.yaml — DEFAULT logging setup
+#
+# Consumed via logging.config.dictConfig.
+# Handlers, formatters and levels are declared here rather than in code so that
+# changing where logs go never means editing Python.
+
+version: 1
+
+disable_existing_loggers: false
+
+formatters:
+  simple:
+    format: '%(levelname)-8s %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+  detailed:
+    format: '%(asctime)s  %(name)s %(module)-15s %(levelname)-7s %(message)s'
+    datefmt: '>%m-%d %H:%M:%S'
+
+handlers:
+  stderr:
+    class: logging.StreamHandler
+    level: WARNING
+    formatter: simple
+    stream: ext://sys.stderr
+
+  stdout:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: detailed
+    stream: ext://sys.stdout
+
+  # Same as `stdout` but on stderr. The CLI swaps to this so that stdout carries
+  # only program output — otherwise `cli-cmd ... --json | jq` chokes on log lines
+  # interleaved with the JSON.
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: detailed
+    stream: ext://sys.stderr
+
+  # 5 MB per file, 3 backups.
+  file-stdout:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: logs/stdout.log
+    maxBytes: 5242880
+    backupCount: 3
+
+  file-stderr:
+    class: logging.handlers.RotatingFileHandler
+    level: WARNING
+    formatter: detailed
+    filename: logs/error.log
+    maxBytes: 5242880
+    backupCount: 3
+
+# Top-level `root:` is the documented form. (A `root:` key nested under
+# `loggers:` also happens to work, because logging.getLogger("root") returns the
+# real root logger — but this is the spelling the docs guarantee.)
+root:
+  level: INFO
+  handlers:
+    - stderr
+    - stdout
+    - file-stderr
+    - file-stdout

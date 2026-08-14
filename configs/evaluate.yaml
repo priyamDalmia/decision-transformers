@@ -1,0 +1,16 @@
+# Evaluation — see dt.config.EvalConfig for the schema.
+# Values here override the dataclass defaults; unknown keys are rejected.
+
+checkpoint_path: data/checkpoints/rcbc_mlp.pt
+env_name: Pendulum-v1
+
+# Sweeping targets shows whether the model conditions on return at all.
+target_returns: [-1500.0, -1000.0, -500.0, -200.0, -100.0]
+num_episodes: 100
+
+results_path: output/results/eval.json
+
+seed: 0
+
+# null -> use cuda when available, else cpu.
+device: null

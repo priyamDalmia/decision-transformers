@@ -1,13 +1,19 @@
+import logging
+
 import gymnasium as gym
 import numpy as np
 import torch
 
-from models.mlp import RCBCModel
+from dt.models.mlp import RCBCModel
+from dt.paths import CHECKPOINT_DIR
+from dt.utils.logging_setup import setup_logging
+
+logger = logging.getLogger(__name__)
 
 
 @torch.no_grad()
 def evaluate(
-    checkpoint_path,
+    checkpoint_path=CHECKPOINT_DIR / "rcbc_mlp.pt",
     env_name="Pendulum-v1",
     target_return=-200.0,
     num_episodes=100,
@@ -25,8 +31,9 @@ def evaluate(
     model.load_state_dict(ckpt["model_state"])
     model.eval()
 
-    state_mean = torch.tensor(ckpt["state_mean"], dtype=torch.float32).to(device)
-    state_std = torch.tensor(ckpt["state_std"], dtype=torch.float32).to(device)
+    # Saved by train() as float tensors already - just move them to the device.
+    state_mean = ckpt["state_mean"].to(device)
+    state_std = ckpt["state_std"].to(device)
     rtg_scale = ckpt["rtg_scale"]
 
     returns = []
@@ -50,14 +57,19 @@ def evaluate(
 
     env.close()
     returns = np.array(returns)
-    print(
-        f"Target RTG = {target_return} | "
-        f"Mean return = {returns.mean():.2f} +/- {returns.std():.2f}"
+    logger.info(
+        "Target RTG %8.1f | mean return %.2f +/- %.2f over %d episodes",
+        target_return,
+        returns.mean(),
+        returns.std(),
+        num_episodes,
     )
     return returns
 
 
 if __name__ == "__main__":
+    setup_logging()
+
     # Sweep target returns to see if the model actually conditions on RTG
     for target in [-1500, -1000, -500, -200, -100]:
-        evaluate("checkpoints/rcbc_mlp.pt", target_return=target)
+        evaluate(target_return=target)
